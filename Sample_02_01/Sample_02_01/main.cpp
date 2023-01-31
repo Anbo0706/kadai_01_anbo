@@ -4,12 +4,17 @@
 // 頂点構造体
 struct SimpleVertex
 {
-    float x, y, z; // 頂点座標
+    float pos[3];       // 頂点座標
+    float color[3];     // 頂点カラー
 };
 
 // 関数宣言
 void InitRootSignature(RootSignature& rs);
 void InitPipelineState(PipelineState& pipelineState, RootSignature& rs, Shader& vs, Shader& ps);
+
+const unsigned int window_width = 1080;
+const unsigned int window_height = 600;
+
 
 ///////////////////////////////////////////////////////////////////
 // ウィンドウプログラムのメイン関数
@@ -36,12 +41,18 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     PipelineState pipelineState;
     InitPipelineState(pipelineState, rootSignature, vs, ps);
 
+    float r = (float)window_width / window_height;
     // 4. 三角形の頂点バッファを作成
     // 頂点配列を定義
     SimpleVertex vertices[] = {
-        { -0.5f, -0.5f, 0.0f },
-        { 0.0f, 0.5f, 0.0f },
-        { 0.5f, -0.5f, 0.0f },
+        {0.0f, 0.0f ,0.0f},
+        {0.0f, 0.5f ,0.0f},
+        {0.5f / r, 0.25f,0.0f},
+        {0.5f / r, -0.25f,0.0f},
+        {0.0f, -0.5f,0.0f},
+        {-0.5f / r, -0.25f,0.0f},
+        {-0.5f / r, 0.25f,0.0f},
+        {0.7f, 0.0f,0.0f},
     };
 
     VertexBuffer triangleVB;
@@ -50,9 +61,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
     // 5. 三角形のインデックスバッファを作成
     // インデックス配列
-    uint16_t indices[] = {
-        0,1,2
-    };
+    uint16_t indices[] = { 0,1,2, 0,2,3, 0,3,4, 0,4,5, 0,5,6, 0,6,1, 7,8,9 };
     IndexBuffer triangleIB;
     triangleIB.Init(sizeof(indices), 2);
     triangleIB.Copy(indices);
@@ -65,7 +74,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     // ここからゲームループ
     while (DispatchWindowMessage())
     {
-        // 1フレームの開始
+        // レンダリング開始
         g_engine->BeginFrame();
 
         //////////////////////////////////////
@@ -74,47 +83,43 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
         // 1. ルートシグネチャを設定
         renderContext.SetRootSignature(rootSignature);
-
         // 2. パイプラインステートを設定
         renderContext.SetPipelineState(pipelineState);
-
         // 3. プリミティブのトポロジーを設定
         renderContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
         // 4. 頂点バッファを設定
         renderContext.SetVertexBuffer(triangleVB);
-
         // 5. インデックスバッファを設定
         renderContext.SetIndexBuffer(triangleIB);
-
         // 6. ドローコール
-        renderContext.DrawIndexed(3);
+        renderContext.DrawIndexed(_countof(indices));
 
-        /////////////////////////////////////////
+        /// //////////////////////////////////////
         // 絵を描くコードを書くのはここまで！！！
         //////////////////////////////////////
-        // 1フレーム終了
+        // レンダリング終了
         g_engine->EndFrame();
     }
     return 0;
 }
 
 // ルートシグネチャの初期化
-void InitRootSignature( RootSignature& rs )
+void InitRootSignature(RootSignature& rs)
 {
     rs.Init(D3D12_FILTER_MIN_MAG_MIP_LINEAR,
-            D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-            D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-            D3D12_TEXTURE_ADDRESS_MODE_WRAP);
+        D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+        D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+        D3D12_TEXTURE_ADDRESS_MODE_WRAP);
 }
+
 // パイプラインステートの初期化
 void InitPipelineState(PipelineState& pipelineState, RootSignature& rs, Shader& vs, Shader& ps)
 {
-
     // 頂点レイアウトを定義する
     D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
     {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
     };
 
     // パイプラインステートを作成
